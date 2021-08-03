@@ -1,5 +1,5 @@
 """\
-RSTFont.py
+Font.py
 
 Created on July 30, 2021
 Based on GTFont from GlyphTest.py
@@ -8,11 +8,11 @@ Based on GTFont from GlyphTest.py
 """
 
 from fontTools.ttLib import ttFont, TTLibError
-from FontDocTools.Font import Font, Glyph
+from FontDocTools.Font import Font as FDTFont, Glyph as FDTGlyph
 
-class RSTFont(Font):
+class Font(FDTFont):
     def __init__(self, fontFile, fontName=None, fontNumber=None):
-        Font.__init__(self, fontFile, fontName, fontNumber)
+        FDTFont.__init__(self, fontFile, fontName, fontNumber)
 
     def __contains__(self, item):
         return item in self._ttFont
@@ -93,7 +93,7 @@ class RSTFont(Font):
         if glyphName not in self._ttGlyphSet:
             raise ValueError(f"Unknown glyph name: “{glyphName}”.")
         # glyph = GTGlyph(self, glyphName)
-        glyph = Glyph(glyphName, self)
+        glyph = FDTGlyph(glyphName, self)
         glyphs[glyphName] = glyph
         return glyph
 
