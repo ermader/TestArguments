@@ -93,7 +93,7 @@ class Font(FDTFont):
         if glyphName not in self._ttGlyphSet:
             raise ValueError(f"Unknown glyph name: “{glyphName}”.")
         # glyph = GTGlyph(self, glyphName)
-        glyph = FDTGlyph(glyphName, self)
+        glyph = FDTGlyph(glyphName, self._ttGlyphName(glyphName), self)
         glyphs[glyphName] = glyph
         return glyph
 
