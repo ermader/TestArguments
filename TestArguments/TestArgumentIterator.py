@@ -58,12 +58,13 @@ class TestArgumentIterator(ArgumentIterator):
         return glist
 
 class TestArgs:
-    __slots__ = "debug", "fontFile", "fontName", "fontNumber", "glyphSpec", "range"
-    def __init__(self):
+    __slots__ = "debug", "fontFile", "fontName", "fontNumber", "needGlyph", "glyphSpec", "range"
+    def __init__(self, needGlyph=True):
         self.debug = False
         self.fontFile = None
         self.fontName = None
         self.fontNumber = None
+        self.needGlyph = needGlyph
         self.glyphSpec = None
         self.range = (30, 70)
         # self.steps = 20
@@ -90,7 +91,7 @@ class TestArgs:
     def processArgument(self, argument, arguments):
         if argument == "--font":
             self.fontFile, self.fontName = arguments.nextExtraAsFont("font")
-        elif argument == "--glyph":
+        elif self.needGlyph and argument == "--glyph":
             extra = arguments.nextExtra("glyph specification")
             self.processGlyph(extra)
         # elif argument == "--steps":
@@ -118,7 +119,7 @@ class TestArgs:
 
         if not self.fontFile:
             raise ValueError("Missing “--font” option.")
-        if not self.glyphSpec:
+        if self.needGlyph and not self.glyphSpec:
             raise ValueError("Missing “--glyph”")
 
     def getGlyph(self, font):
