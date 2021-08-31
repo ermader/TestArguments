@@ -4,13 +4,13 @@ with open("README.md", "r") as file:
     long_description = file.read()
 
 setup(
-    name="TestARguments",
+    name="TestArguments",
     version="0.1",
     packages=find_packages(),
 
     python_requires=">=3.8",
     install_requires=[
-        "FontDocTools >= 1.2",
+        "FontDocTools >= 1.2.1",
     ],
 
     author="Eric Mader",

@@ -1,4 +1,4 @@
-The following copyright notice and MIT license apply to all parts of the TestArguments project
+The following copyright notice and MIT license apply to all parts of the TestArguments project.
 
 ---
 
