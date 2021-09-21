@@ -5,7 +5,7 @@ with open("README.md", "r") as file:
 
 setup(
     name="TestArguments",
-    version="0.1",
+    version="0.2",
     packages=find_packages(),
 
     python_requires=">=3.8",
