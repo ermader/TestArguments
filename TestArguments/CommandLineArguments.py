@@ -8,11 +8,30 @@ Created on September 16, 2021
 
 from FontDocTools.ArgumentIterator import ArgumentIterator
 
+booleanType = type(True)
 functionType = type(lambda a: a)
 tupleType = type((1,1))
 
+# useful for creating unique instances
+class _no_object(object):
+    pass
+
 class CommandLineOption:
+    """\
+    An object that represents a command line option.
+    """
+
     def __init__(self, option, processor, arg, prop, defaultValue, required=True):
+        """\
+        Initialize a CommandLineOption object.
+
+        :param option: the name of the option
+        :param processor: a function to process the option's extra argument, or None if no processing needed
+        :param arg: a function to fetch the option's argument from the command line, or the argument directly
+        :param prop: the name of the property to be set in the spec object, or a list of names
+        :param defaultValue: the value to be set if the option isn't present on the command line
+        :param reauired: True if the object must be present on the command line
+        """
         self._option = f"--{option}"
         self._processor = processor
         self._arg = arg
@@ -22,6 +41,13 @@ class CommandLineOption:
 
     @staticmethod
     def valueFromDict(dict, key, type):
+        """\
+        Get a value for the given key in dict, or raise ValueError if the key isn't present.
+
+        :param dict: the dictionary
+        :param key: the key
+        :param type: a string identifying the type of the value, used in ValueError
+        """
         try:
             return dict[key]
         except:
@@ -29,13 +55,48 @@ class CommandLineOption:
 
     @staticmethod
     def booleanFromArgument(argument):
-        return argument if type(argument) == type(True) else True
+        """\
+        Get the boolean value of an argument. Called with an ArgumentIterator
+        if the option is on the command line, or a boolean to set the default value.
+
+        :param argument: a boolean or an ArgumentIterator
+        :return: argument if it's a boolean, otherwise True
+        """
+        return argument if type(argument) == booleanType else True
 
     def getArg(self, arguments):
+        """\
+        Get the option's argument.
+
+        :param argumewnts: A function to fetch the argument, or the argument itse'f
+        :return: the argument
+        """
         return self.arg(arguments) if type(self.arg) == functionType else self.arg
 
-    def getProp(self, s, value):
-        return self.processor(s, value) if self.processor else value
+    def getProp(self, s, arg):
+        """\
+        Get the option's value to set in the spec object.
+
+        :param s: the spec object
+        :param arg: the option's argument
+        :return: the value
+        """
+        return self.processor(s, arg) if self.processor else arg
+
+    def setProp(self, s, arg):
+        """\
+        Set the option's props in the spec object.
+
+        :param s: the spec object
+        :param arg: the argument
+        """
+        sd = s.__dict__
+        value = self.getProp(s, arg)
+        if type(self.prop) == tupleType:
+            for p, v in zip(self.prop, value):
+                sd[p] = v
+        else:
+            sd[self.prop] = value
 
     @property
     def option(self):
@@ -62,13 +123,24 @@ class CommandLineOption:
         return self._required
 
 class CommandLineArgs:
+    """\
+    A base class to hold the results of parsing the command line.
+    """
     def __init__(self):
+        # base class, so no CommandLineOptions
         self._options = []
 
     def processArguments(self, argumentList):
+        """\
+        Process the command line. Look the argument up in the
+        list of CommandLineOptions, get its value and set it in the spec object.
+
+        Set the default value for any unseen arguments.
+
+        Raise ValueError for any unknow options or any missing required options.
+        """
         arguments = ArgumentIterator(argumentList)
         argumentsSeen = {}
-        dict = self.__dict__
 
         for argument in arguments:
             if argument in argumentsSeen:
@@ -78,16 +150,12 @@ class CommandLineArgs:
             for option in self._options:
                 if option.option == argument:
                     arg = option.getArg(arguments)
-                    value = option.getProp(self, arg)
-                    if type(option.prop) == tupleType:
-                        for p, v in zip(option.prop, value):
-                            dict[p] = v
-                    else:
-                        dict[option.prop] = value
+                    option.setProp(self, arg)
                     break
             else:
                 raise ValueError(f"Unrecognized option: \"{argument}\"")
 
+        # check for any required argument that are missing
         missingOptions = []
         for option in self._options:
             if option.required and option.option not in argumentsSeen:
@@ -102,26 +170,34 @@ class CommandLineArgs:
         """\
         Complete initialization of a CommandLineArgs after some values have
         been set from the argument list.
-        Fill in defaults for non-required options.
+        Fill in defaults for non-required options that weren't seen.
         Raise ValueError if invalid option combinations are detected.
+
+        :param argumentsSeen: a dictionary of all options seen on the command line
         """
-        dict = self.__dict__
         for option in self._options:
             if option.option not in argumentsSeen:
-                dict[option.prop] = option.getProp(self, option.defaultValue)
+                option.setProp(self, option.defaultValue)
 
         return  # nothing else to check
 
     def setProps(self, propsDict):
         """\
-        Set properties from propsDict.
+        Set properties from a dictionary.
         Keys are property names and values are the values to be set.
         Values are processed using the process member in the corresponding
         CommandLineOption.
-        This won't work for options where the prop is a tuple.
+
+        :param propsDict: the dictionary
         """
-        dict = self.__dict__
+
+        #
+        # By doing this here, we're guaranteed that _nothing will
+        # be a unique instance that can't be a value in propsDict.
+        #
+        _nothing = _no_object()
+
         for option in self._options:
-            prop = option.prop
-            if prop in propsDict:
-                dict[prop] = option.getProp(self, propsDict[prop])
+            value = propsDict.get(option.prop, _nothing)
+            if value is not _nothing:
+                option.setProp(self, value)
