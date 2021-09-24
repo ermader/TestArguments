@@ -22,11 +22,46 @@ class Font(FDTFont):
 
     @classmethod
     def _getFontName(cls, ttFont, nameID):
-        nameRecord = ttFont["name"].getName(nameID, 3, 1, 0x0409)  # name, Windows, Unicode BMP, English
-        if nameRecord is None:
-            nameRecord = ttFont["name"].getName(nameID, 1, 0)  # name, Mac, Roman
-        if nameRecord is not None:
-            return str(nameRecord)
+        """\
+        Get a name string for the given name ID from the font.
+
+        Based on fontNameEntry from FontDocTools.
+
+        :param ttFont: the ttFont from which to fetch the name string
+        :param nameID: the ID for the name to fetch
+        :return: the name string or None if the name isn't found
+        """
+        platformsEncodingsLanguages = []
+
+        # Unicode platform
+        # For this platform, encodings 3, 4, 6 are relevant; 0, 1, 2 are deprecated; 5 is only for cmap.
+        encodings = [3, 4, 6]
+
+        language = None
+        ltagTable = ttFont.get("ltag", None)
+
+        if ltagTable and "en" in ltagTable.tags:
+            language = ltagTable.tags.index("en")
+
+        for encoding in encodings:
+            platformsEncodingsLanguages.append((0, encoding, language))
+
+        # Windows platform
+        # For this platform, we only use the Unicode encodings
+        encodings = [0, 1, 10]
+
+        for encoding in encodings:
+            platformsEncodingsLanguages.append((3, encoding, 0x0409))
+
+        # Macintosh platform
+        # Only MacRoman is still relevant.
+        platformsEncodingsLanguages.append((1, 0, None))
+
+        for platform, encoding, language in platformsEncodingsLanguages:
+            nameRecord = ttFont["name"].getName(nameID, platform, encoding, language)
+            if nameRecord:
+                return str(nameRecord)
+
         return None
 
     @classmethod
