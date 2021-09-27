@@ -20,73 +20,18 @@ class Font(FDTFont):
     def __getitem__(self, item):
         return self._ttFont[item]
 
-    @classmethod
-    def _getFontName(cls, ttFont, nameID):
-        """\
-        Get a name string for the given name ID from the font.
-
-        Based on fontNameEntry from FontDocTools.
-
-        :param ttFont: the ttFont from which to fetch the name string
-        :param nameID: the ID for the name to fetch
-        :return: the name string or None if the name isn't found
-        """
-        platformsEncodingsLanguages = []
-
-        # Unicode platform
-        # For this platform, encodings 3, 4, 6 are relevant; 0, 1, 2 are deprecated; 5 is only for cmap.
-        encodings = [3, 4, 6]
-
-        language = None
-        ltagTable = ttFont.get("ltag", None)
-
-        if ltagTable and "en" in ltagTable.tags:
-            language = ltagTable.tags.index("en")
-
-        for encoding in encodings:
-            platformsEncodingsLanguages.append((0, encoding, language))
-
-        # Windows platform
-        # For this platform, we only use the Unicode encodings
-        encodings = [0, 1, 10]
-
-        for encoding in encodings:
-            platformsEncodingsLanguages.append((3, encoding, 0x0409))
-
-        # Macintosh platform
-        # Only MacRoman is still relevant.
-        platformsEncodingsLanguages.append((1, 0, None))
-
-        for platform, encoding, language in platformsEncodingsLanguages:
-            nameRecord = ttFont["name"].getName(nameID, platform, encoding, language)
-            if nameRecord:
-                return str(nameRecord)
-
-        return None
-
-    @classmethod
-    def _getPostScriptName(cls, ttFont):
-        return cls._getFontName(ttFont, 6)
-
-    @classmethod
-    def _getFullName(cls, ttFont):
-        return cls._getFontName(ttFont, 4)
-
-    @classmethod
-    def _getFamilyName(cls, ttFont):
-        return cls._getFontName(ttFont, 1)
-
     @property
     def postscriptName(self):
-        return self._getPostScriptName(self._ttFont)
+        # return self.fontNameEntry(6, None)  # postscript name is the same in any language
+        return self._getPostScriptName(self._ttFont)  # use this until language == None bug fixed in fontNameEntry.
 
     @property
     def fullName(self):
-        return self._getFullName(self._ttFont)
+        return self.fontNameEntry(4, "en")
 
     @property
     def familyName(self):
-        return self._getFamilyName(self._ttFont)
+        return self.fontNameEntry(1, "en")
 
     def glyphNameForCharacterCode(self, charCode):
         return self._ttFont.getBestCmap().get(charCode, "")
