@@ -5,15 +5,19 @@ Created on October 26, 2020
 
 @author Eric Mader
 """
-from re import fullmatch
+
+import typing
+
+# from re import fullmatch
 from .GlyphSpec import GlyphSpec
 from FontDocTools.ArgumentIterator import ArgumentIterator
 
+
 class TestArgumentIterator(ArgumentIterator):
-    def __init__(self, arguments):
+    def __init__(self, arguments: list[str]):
         ArgumentIterator.__init__(self, arguments)
 
-    def nextOptional(self):
+    def nextOptional(self) -> typing.Optional[str]:
         """\
         Returns an optional next extra argument.
         Returns None if there’s no more argument, or if the next
@@ -30,7 +34,7 @@ class TestArgumentIterator(ArgumentIterator):
 
         return nextArgument
 
-    def nextExtraAsFont(self, valueName):
+    def nextExtraAsFont(self, valueName: str):
         """\
         Returns a tuple (fontFile, fontName).
         The font file is taken from the first extra argument.
@@ -44,12 +48,19 @@ class TestArgumentIterator(ArgumentIterator):
         fontName = None
         if fontFile.endswith(".ttc"):
             fontName = self.nextExtra(valueName + " name")
-        elif not fontFile.endswith(".ttf") and not fontFile.endswith(".TTF") and not fontFile.endswith(".otf") and not fontFile.endswith(".ufo"):
-            raise ValueError(f"Expected file name with “.ttf” or “.otf” or “.ufo”; got “{fontFile}”.")
+        elif (
+            not fontFile.endswith(".ttf")
+            and not fontFile.endswith(".TTF")
+            and not fontFile.endswith(".otf")
+            and not fontFile.endswith(".ufo")
+        ):
+            raise ValueError(
+                f"Expected file name with “.ttf” or “.otf” or “.ufo”; got “{fontFile}”."
+            )
         return (fontFile, fontName)
 
-    def getGlyphList(self):
-        glist = []
+    def getGlyphList(self) -> list[str]:
+        glist: list[str] = []
         nextArg = self.nextOptional()
         while nextArg:
             glist.append(nextArg)
@@ -57,25 +68,35 @@ class TestArgumentIterator(ArgumentIterator):
 
         return glist
 
+
 class TestArgs:
-    __slots__ = "debug", "fontFile", "fontName", "fontNumber", "needGlyph", "glyphSpec", "range"
-    def __init__(self, needGlyph=True):
+    __slots__ = (
+        "debug",
+        "fontFile",
+        "fontName",
+        "fontNumber",
+        "needGlyph",
+        "glyphSpec",
+        "range",
+    )
+
+    def __init__(self, needGlyph: bool = True):
         self.debug = False
         self.fontFile = None
         self.fontName = None
         self.fontNumber = None
         self.needGlyph = needGlyph
-        self.glyphSpec = None
+        self.glyphSpec: typing.Optional[GlyphSpec] = None
         self.range = (30, 70)
         # self.steps = 20
 
     @classmethod
-    def forArguments(cls, argumentList):
+    def forArguments(cls, argumentList: list[str]):
         args = TestArgs()
         args.processArguments(argumentList)
         return args
 
-    def processArguments(self, argumentList):
+    def processArguments(self, argumentList: list[str]):
         arguments = TestArgumentIterator(argumentList)
         argumentsSeen = {}
 
@@ -88,7 +109,7 @@ class TestArgs:
 
         self.completeInit()
 
-    def processArgument(self, argument, arguments):
+    def processArgument(self, argument: str, arguments: TestArgumentIterator):
         if argument == "--font":
             self.fontFile, self.fontName = arguments.nextExtraAsFont("font")
         elif self.needGlyph and argument == "--glyph":
@@ -101,7 +122,7 @@ class TestArgs:
         else:
             raise ValueError(f"Unrecognized option “{argument}”.")
 
-    def processGlyph(self, specString):
+    def processGlyph(self, specString: str):
         self.glyphSpec = GlyphSpec(specString)
 
         if self.glyphSpec.type == GlyphSpec.unknown:
@@ -122,5 +143,6 @@ class TestArgs:
         if self.needGlyph and not self.glyphSpec:
             raise ValueError("Missing “--glyph”")
 
-    def getGlyph(self, font):
-        return font.glyphForName(self.glyphSpec.nameForFont(font))
+    def getGlyph(self, font: typing.Any):
+        glyphSpec = typing.cast(GlyphSpec, self.glyphSpec)
+        return font.glyphForName(glyphSpec.nameForFont(font))

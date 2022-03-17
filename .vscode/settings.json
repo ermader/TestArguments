@@ -1,0 +1,6 @@
+{
+    "python.analysis.stubPath": "/Users/emader/VSCode/TypeStubs/typings",
+    "terminal.integrated.env.osx": {
+        "PYTHONPATH": "/Users/emader/VSCode/UnicodeData:/Users/emader/VSCode/PathLib:/Users/emader/VSCode/TestArguments"
+    }
+}
